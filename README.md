@@ -251,7 +251,7 @@ you should have a output like that
 
 
 
-![sample image for earthquake map](/images/sample.png "output")
+![sample image for earthquake map](https://github.com/hazem-a1/mab-box-simple/blob/main/sample.png "output")
 
 
 
