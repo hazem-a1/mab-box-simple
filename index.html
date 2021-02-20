@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mab box</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+</head>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    html,
+    #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+    }
+</style>
+
+<body>
+    <div id="map"> </div>
+
+
+    <script>
+        mapboxgl.accessToken = "API_KEY";
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [35, 35],
+            zoom: 5,
+            interactive: true,
+        });
+        map.on("load", async function () {
+            map.loadImage(
+                "https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png",// image uri here
+                async function (error, image) {
+                    if (error) {
+                        console.log(error)
+                    }
+                    this.map.addImage('logo', image);
+                    this.map.addLayer({
+                        'id': 'logo', // unique id 
+                        'type': 'symbol', // type off layer
+                        'source': {
+                            'type': 'geojson', // this way we can deal with geojson data
+                            'data': {
+                                'type': 'FeatureCollection',
+                                //this array would contain a list of point to list the
+                                // symbol on the map
+                                'features': [{
+                                    'type': 'Feature',
+                                    'geometry': {
+                                        'type': 'Point',
+                                        'coordinates': [35, 35] // coods
+                                    }
+                                }]
+                            }
+                        },
+                        'layout': { // data type
+                            'icon-image': 'logo',
+                            // you can resize icon like .5 or 1.25
+                            'icon-size': 1.3
+                        }
+                    });
+                }
+
+            )
+
+            // done with image 
+
+            let arr = []
+
+            await fetch(
+                "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=35&longitude=35&maxradius=10"
+            )
+                .then((res) => res.json())
+                .then((result) =>
+                    arr = result.features)
+                .catch((e) => console.log(e));
+
+            map.addSource('points', {
+                // name it unique to this item so we are going
+                // to reference it later
+                // before was logo remember 😎
+                'type': 'geojson',
+                'data': {
+                    'type': 'FeatureCollection',
+                    'features': arr
+                }
+            });
+
+            map.addLayer({
+                id: "circles", // UNIQUE ID
+                type: "circle",  // type of the item will added on top of the map
+                source: "points", // our pre  source  
+                paint: {
+                    "circle-radius": {
+                        // make the circles larger as the user zooms from 12 to 22
+                        property: "mag",
+                        stops: [
+                            [0, 4],
+                            [5, 10],
+                        ],
+                    },
+                    "circle-color": {
+                        property: "mag", // mag is a property from api show earthquake power
+                        stops: [
+                            [0, "white"], // give it color based on power
+                            [3, "yellow"],
+                            [5, "red"],
+                        ],
+                    },
+                    "circle-stroke-width": 2.2,  // the outer line of the circle
+                    "circle-stroke-color": "#fff", // line of the border line
+                },
+                filter: ["==", "$type", "Point"], // filter out any data not point
+                // from the api you could receive a line or author shape
+            });
+
+        })
+    </script>
+</body>
+
+</html>
